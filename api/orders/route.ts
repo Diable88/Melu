@@ -1,63 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/database"
 
-export async function GET() {
-  try {
-    const orders = await db.getOrders()
-    return NextResponse.json({
-      success: true,
-      data: orders,
-    })
-  } catch (error) {
-    console.error("Error fetching orders:", error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch orders",
-      },
-      { status: 500 },
-    )
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json()
-    const { tableNumber, items, totalAmount, notes } = body
+    const { status } = body
 
-    // Validate required fields
-    if (!tableNumber || !items || !Array.isArray(items) || items.length === 0) {
+    if (!status) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields",
+          error: "Status is required",
         },
         { status: 400 },
       )
     }
 
-    const order = await db.createOrder({
-      tableNumber,
-      items,
-      totalAmount,
-      status: "pending",
-      notes,
-    })
+    const order = await db.updateOrderStatus(params.id, status)
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: order,
-        message: "Order created successfully",
-      },
-      { status: 201 },
-    )
+    return NextResponse.json({
+      success: true,
+      data: order,
+      message: "Order status updated successfully",
+    })
   } catch (error) {
-    console.error("Error creating order:", error)
+    console.error("Error updating order status:", error)
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create order",
+        error: "Failed to update order status",
       },
       { status: 500 },
     )
